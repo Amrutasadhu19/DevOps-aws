@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:5.7
+    env_file: 
+      - ./.env
+    ports:
+      - "$MYSQLDB_LOCAL_PORT:$MYSQLDB_CONTAINER_PORT"
+    
+    environment:
+      - MYSQL_ROOT_PASSWORD=$MYSQLDB_ROOT_PASSWORD
+      - MYSQLDB_DATABASE=$MYSQLDB_DATABASE
+    volumes:
+      - ./test-dump.sql:/docker-entrypoint-initdb.d/test-dump.sql
+    networks:
+      - app-network
+    hostname: $HOST
+  app:
+    build: ./dockerfile_node
+    restart: unless-stopped
+    env_file: 
+      - ./.env
+    ports:
+      - "$NODE_LOCAL_PORT:$NODE_CONTAINER_PORT"
+
+    environment:
+      - DB_HOST=$HOST
+      - DB_USER=$MYSQLDB_USER
+      - DB_PASSWORD=$MYSQLDB_PASSWORD
+      - DB_NAME=$MYSQLDB_DATABASE
+    depends_on:
+      - db
+    networks:
+      - app-network 
+
+networks:
+  app-network:
+    driver: bridge
